@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>HMS ICU Module - Implementation Guide & UI Specification</title>
+<style>
+  /* Base typography & colors */
+  body {
+    font-family: Arial, Helvetica, sans-serif;
+    color: #222222;
+    background: #ffffff;
+    line-height: 1.45;
+    font-size: 11pt;
+    margin: 0;
+    padding: 24px;
+  }
+
+  /* Force background colors and borders in PDF output */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    box-sizing: border-box;
+  }
+
+  /* Floating Screen Print Bar (Hidden on actual PDF output) */
+  .no-print-bar {
+    background: #0f4c81;
+    color: #ffffff;
+    padding: 14px 20px;
+    margin: -24px -24px 24px -24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px solid #093256;
+  }
+  .print-btn {
+    background: #28a745;
+    color: #ffffff;
+    border: none;
+    padding: 10px 18px;
+    font-size: 13pt;
+    font-weight: bold;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  .print-btn:hover {
+    background: #218838;
+  }
+
+  @media print {
+    .no-print-bar {
+      display: none !important;
+    }
+    body {
+      padding: 0;
+      margin: 10mm 12mm;
+    }
+  }
+
+  /* Document Structure */
+  .cover-card {
+    border: 2px solid #0f4c81;
+    background: #f4f8fc;
+    padding: 30px;
+    border-radius: 6px;
+    margin-bottom: 25px;
+  }
+  .cover-title {
+    color: #0f4c81;
+    font-size: 20pt;
+    font-weight: bold;
+    margin: 0 0 6px 0;
+  }
+  .cover-subtitle {
+    color: #17a2b8;
+    font-size: 12pt;
+    font-weight: bold;
+    margin: 0 0 15px 0;
+  }
+  .meta-box {
+    font-size: 9.5pt;
+    color: #444444;
+    border-left: 3px solid #0f4c81;
+    padding-left: 12px;
+    margin-top: 15px;
+  }
+
+  h2 {
+    color: #0f4c81;
+    font-size: 14pt;
+    border-bottom: 2px solid #e1ecf4;
+    padding-bottom: 4px;
+    margin-top: 26px;
+    margin-bottom: 10px;
+  }
+  h3 {
+    color: #333333;
+    font-size: 11.5pt;
+    margin-top: 16px;
+    margin-bottom: 6px;
+  }
+
+  /* Tables */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 12px 0 18px 0;
+    font-size: 9pt;
+  }
+  th {
+    background-color: #0f4c81 !important;
+    color: #ffffff !important;
+    text-align: left;
+    padding: 7px 9px;
+    font-weight: bold;
+  }
+  td {
+    border: 1px solid #dcdcdc;
+    padding: 6px 9px;
+    vertical-align: top;
+  }
+  tr:nth-child(even) td {
+    background-color: #f9fbfd !important;
+  }
+
+  /* Status Badges */
+  .badge {
+    display: inline-block;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 8pt;
+    font-weight: bold;
+  }
+  .badge-avail { background: #d4edda !important; color: #155724 !important; border: 1px solid #c3e6cb; }
+  .badge-res   { background: #fff3cd !important; color: #856404 !important; border: 1px solid #ffeeba; }
+  .badge-occ   { background: #cce5ff !important; color: #004085 !important; border: 1px solid #b8daff; }
+  .badge-dirty { background: #f8d7da !important; color: #721c24 !important; border: 1px solid #f5c6cb; }
+
+  /* Callout boxes */
+  .callout {
+    border-left: 4px solid #17a2b8;
+    background: #edf7f9 !important;
+    padding: 10px 14px;
+    margin: 14px 0;
+    font-size: 9.5pt;
+  }
+  .callout-alert {
+    border-left-color: #f5a623;
+    background: #fff8eb !important;
+  }
+
+  /* Pre-formatted wireframe boxes */
+  .wireframe-box {
+    background: #fbfbfb !important;
+    border: 1px solid #cccccc;
+    padding: 10px;
+    font-family: monospace;
+    font-size: 8pt;
+    line-height: 1.3;
+    white-space: pre;
+    overflow-x: auto;
+    margin: 10px 0 16px 0;
+  }
+</style>
+</head>
+<body>
+
+<!-- On-Screen Button Bar (Automatically hides in the printed PDF) -->
+<div class="no-print-bar">
+  <div>
+    <strong>HMS ICU Implementation Guide</strong> &mdash; Ready to Export
+  </div>
+  <button class="print-btn" onclick="window.print()">🖨️ Click Here to Save as PDF</button>
+</div>
+
+<!-- Header / Cover Card -->
+<div class="cover-card">
+  <div class="cover-title">Hospital Management System (HMS)</div>
+  <div class="cover-subtitle">Intensive Care Unit (ICU) Implementation Guide & UI Specification</div>
+  <p style="margin: 0; font-size: 10pt; color: #444;">
+    A practical, step-by-step guidance document describing module navigation, bedside flowsheets, specialized nutrition, fluid monitoring, shift handovers, and patient step-down workflows.
+  </p>
+  <div class="meta-box">
+    <strong>Document Ref:</strong> HMS-ICU-UIUX-SPEC-2026<br>
+    <strong>Status:</strong> Approved Baseline Architecture<br>
+    <strong>Core Principles:</strong> Zero Over-Engineering | Non-Destructive Audit Trail | 100% Preserved Fields
+  </div>
+</div>
+
+<h2>1. Existing HMS Inspection & Reuse Architecture</h2>
+<p>
+  To avoid code duplication and unnecessary architectural complexity, the ICU module integrates directly into existing core HMS databases:
+</p>
+<ul>
+  <li><strong>Master Patient Index (MPI):</strong> Demographics, MRN, Code Status, and verified Drug Allergies stream directly into the sticky patient header.</li>
+  <li><strong>Bed Management:</strong> Reuses existing hospital bed tables, adding critical-care equipment attributes (Ventilator Capable, Dialysis Ready, Isolation) and a 5-stage bed hygiene state engine.</li>
+  <li><strong>Observation Repository:</strong> Reuses the timestamped hospital clinical observation store, presenting an hourly time-series flowsheet matrix.</li>
+  <li><strong>Medication Administration (eMAR):</strong> Preserves a modular container hook for the Inpatient Department (IPD) eMAR schema once provided.</li>
+</ul>
+
+<div class="callout">
+  <strong>Anti-Over-Engineering Policy:</strong> Routine nursing entries (hourly vitals, feeds, and drain outputs) commit directly to the active ledger with zero intermediate managerial approval gates. Dual-witness signatures are strictly limited to high-alert medications and shift handovers.
+</div>
+
+<h2>2. Screen UI-01: ICU Bed Board & Central Status Dashboard</h2>
+<p>
+  <strong>Purpose:</strong> Provides charge nurses and intensivists with real-time awareness of unit capacity, patient acuity, ventilator usage, and bed cleanliness.
+</p>
+<p>
+  <strong>Bed State Lifecycle:</strong>
+  <span class="badge badge-avail">Available</span> &rarr;
+  <span class="badge badge-res">Reserved</span> &rarr;
+  <span class="badge badge-occ">Occupied</span> &rarr;
+  <span class="badge badge-dirty">Cleaning Required</span> &rarr;
+  <span class="badge" style="background:#ddd; color:#333;">Maintenance</span>
+</p>
+
+<div class="wireframe-box">
++-------------------------------------------------------------------------------------------------------+
+| [HMS CORE]  Unit: Medical ICU (MICU) | Total Beds: 10/12 Occupied | User: Nurse S. Jenkins   [Logout] |
++-------------------------------------------------------------------------------------------------------+
+| ICU Bed Board                                             Filter: [ All Beds v ]  [ + Reserve Bed ]   |
++---------------------------+---------------------------+---------------------------+-------------------+
+| [BED_01] . OCCUPIED       | [BED_02] . OCCUPIED       | [BED_03] . RESERVED       | [BED_04] . DIRTY  |
+| Pt: Patient A (64y M)     | Pt: Patient B (42y F)     | Incoming: ED / Trauma     | Vacated: 09:15    |
+| MRN: 000-1122 | Day 2     | MRN: 000-3344 | Day 5     | Pt: Referral C (In-Route) | Cleaner Assigned  |
+| Dx: Post-Op Monitoring    | Dx: Metabolic Acidosis    | Profile: Vent Capable     | Target: 10:30     |
+| Vent: No | Lines: CVC     | Vent: Active | Lines: CVC | Reserved: Charge Nurse    |                   |
+| Balance: +450 ml          | Balance: -120 ml          | ETA: 15 mins              | [ Mark Clean ]    |
+| [ Open Patient Chart ]    | [ Open Patient Chart ]    | [ Confirm Bed Arrival ]   |                   |
++---------------------------+---------------------------+---------------------------+-------------------+
+</div>
+
+<h2>3. Screen UI-02: Comprehensive Bedside Flowsheet (Hourly Matrix)</h2>
+<p>
+  <strong>Purpose:</strong> Bedside nurse interface for charting hourly time-series vital signs, ventilator mechanics, and neurological scores.
+</p>
+<ul>
+  <li>
+    <strong>Mean Arterial Pressure (MAP):</strong> Calculated automatically on cell blur upon entry of Systolic (S) and Diastolic (D):
+    <br><code>MAP = round((Systolic + 2 * Diastolic) / 3)</code>
+  </li>
+  <li>
+    <strong>Non-Blocking Alert Prompts:</strong> Values outside typical limits trigger a soft inline confirmation prompt rather than hard-stopping the user from submitting a genuine clinical observation.
+  </li>
+</ul>
+
+<div class="wireframe-box">
++-----------------------+--------+--------+--------+--------+--------+--------+-----------------+
+| Observation / Hour    | 07:00  | 08:00  | 09:00  | 10:00  | 11:00  | 12:00  | 13:00 (ACTIVE)  |
++-----------------------+--------+--------+--------+--------+--------+--------+-----------------+
+| Heart Rate (bpm)      | 92     | 95     | 88     | 90     | 94     | 89     | [   91        ] |
+| BP (Systolic/Diast)   | 108/62 | 105/60 | 112/65 | 110/64 | 114/68 | 108/62 | [ 110 ] / [ 65] |
+| MAP (mmHg) [Auto]     | 77     | 75     | 81     | 79     | 83     | 77     | 80 (Calculated) |
+| Ventilator Mode       | PRVC   | PRVC   | PRVC   | PSV    | PSV    | PSV    | [ PSV Mode    v]|
+| FiO2 (%)              | 45     | 45     | 40     | 40     | 35     | 35     | [   35        ] |
+| PEEP (cmH2O)          | 8      | 8      | 8      | 5      | 5      | 5      | [    5        ] |
+| SpO2 (%)              | 97     | 96     | 98     | 97     | 98     | 98     | [   97        ] |
+| Documenting Nurse     | S.J.   | S.J.   | S.J.   | S.J.   | S.J.   | S.J.   | [ Save Column ] |
++-----------------------+--------+--------+--------+--------+--------+--------+-----------------+
+</div>
+
+<h2>4. Screen UI-03: Specialized Nutrition & Fluid Monitoring</h2>
+<p>
+  <strong>Purpose:</strong> Implements the exact confirmed fields for enteral feeding, oral diet, and bodily outputs, with a real-time net fluid balance ledger.
+</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Category</th>
+      <th>Preserved Confirmed Fields</th>
+      <th>Validation & Calculation Rules</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>NG Nutrition</strong></td>
+      <td><code>DateTime</code>, <code>Type</code>, <code>Amount (ml)</code>, <code>Frequency</code>, <code>Comments</code>, <code>Nurse</code></td>
+      <td>Amount must be &gt; 0 ml. Frequency: Continuous (ml/hr) vs. Bolus. Nurse auto-filled.</td>
+    </tr>
+    <tr>
+      <td><strong>Oral Nutrition</strong></td>
+      <td><code>DateTime</code>, <code>Type</code>, <code>Amount (ml)</code>, <code>Frequency</code>, <code>Comments</code>, <code>Nurse</code></td>
+      <td>Amount must be &gt; 0 ml. Diet consistency dropdown: Sips, Clear Liquids, Pureed, Oral Supplement.</td>
+    </tr>
+    <tr>
+      <td><strong>Fluid Loss</strong></td>
+      <td><code>DateTime</code>, <code>Fluid Loss Source</code>, <code>Amount (ml)</code>, <code>Comments</code>, <code>Nurse</code></td>
+      <td>Standard dropdown (Urine, Drain, Chest Tube, Stool, Emesis, Other). Unmeasured checkbox sets volume to NULL without forcing zero.</td>
+    </tr>
+    <tr>
+      <td><strong>Fluid Balance</strong></td>
+      <td><code>DateTime</code>, <code>Total Intake</code>, <code>Total Loss</code>, <code>Total Balance</code>, <code>Comment</code>, <code>Nurse</code></td>
+      <td>
+        <strong>Total Balance = Total Intake - Total Loss</strong><br>
+        If unmeasured entries exist, displays explicit warning: <code>*Estimated / Unmeasured Loss Present</code>.
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="callout callout-alert">
+  <strong>Non-Destructive Correction Cascade:</strong> When an entry is corrected, the database flags the original entry as <code>Superseded</code> and logs the revised value, author, timestamp, and mandatory <code>Reason for Correction</code>. The engine automatically recalculates all subsequent cumulative balances without manual re-entry.
+</div>
+
+<h2>5. Screen UI-04: Structured Nursing Shift Handover</h2>
+<p>
+  <strong>Purpose:</strong> Standardizes shift transitions using the SBAR framework (Situation, Background, Assessment, Recommendation), pairing auto-compiled chart telemetry with dual electronic authentication.
+</p>
+<ul>
+  <li><strong>System Pre-Aggregation:</strong> Vitals ranges, 24h intake/loss totals, active line inventory, and open care tasks compile automatically onto the handoff sheet.</li>
+  <li><strong>Clinical Narrative Entry:</strong> Outgoing nurse documents the clinical narrative, targets for the next shift, and urgent concerns.</li>
+  <li><strong>Dual Electronic Sign-Off:</strong> Outgoing and incoming nurses enter credentials to finalize handoff. The record freezes into an immutable snapshot, and active tasks transfer to the incoming nurse.</li>
+</ul>
+
+<h2>6. Screen UI-05: Patient Step-Down Transfer & Bed Reset</h2>
+<p>
+  <strong>Purpose:</strong> Coordinates transfer orders, line removal checklists, receiving ward acceptance, and initiates bed decontamination.
+</p>
+<ul>
+  <li><strong>Physician Disposition Order:</strong> Destination ward, confirmed bed number, and discharge summary.</li>
+  <li><strong>Nursing Transfer Checklist:</strong> Line disposition (Arterial line, CVC, Foley catheter status) and transport oxygen readiness.</li>
+  <li><strong>Physical Dispatch:</strong> Nurse clicks <em>Dispatch Patient</em> &rarr; closes ICU encounter, resets bed to <code>Cleaning Required</code>, and alerts environmental services.</li>
+</ul>
+
+<h2>7. Open Decisions Requiring Hospital Confirmation</h2>
+<table>
+  <thead>
+    <tr>
+      <th>Decision Item</th>
+      <th>Status</th>
+      <th>Next Step / Action Required</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>IPD MAR Specification</strong></td>
+      <td>Pending Dependency</td>
+      <td>Awaiting hospital provision of IPD Medication Administration Sheet field list to bind shared database tables.</td>
+    </tr>
+    <tr>
+      <td><strong>Daily Fluid Reset Cut-Off</strong></td>
+      <td>Pending Decision</td>
+      <td>Configurable parameter. Confirm whether the 24-hour balance resets at 07:00 (morning shift) or 00:00 (midnight).</td>
+    </tr>
+    <tr>
+      <td><strong>Clinician-Approved Alert Bounds</strong></td>
+      <td>Pending Approval</td>
+      <td>Alerts operate as non-blocking soft review prompts. Awaiting clinical committee sign-off on specific numeric thresholds.</td>
+    </tr>
+  </tbody>
+</table>
+
+</body>
+</html>
