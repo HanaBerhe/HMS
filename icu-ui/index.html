@@ -1,0 +1,859 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HMS ICU Module - Interactive Screen Prototypes</title>
+<style>
+  :root {
+    --primary: #0f4c81;
+    --primary-hover: #0b3860;
+    --primary-light: #e8f1f8;
+    --secondary: #17a2b8;
+    --success: #28a745;
+    --warning: #f5a623;
+    --danger: #dc3545;
+    --dark: #1e293b;
+    --light-bg: #f8fafc;
+    --border: #cbd5e1;
+    --text: #334155;
+    --text-muted: #64748b;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    color: var(--text);
+    background: #f1f5f9;
+    margin: 0;
+    padding: 0;
+    font-size: 13px;
+  }
+
+  /* Global Navigation Shell */
+  .app-header {
+    background: var(--dark);
+    color: white;
+    padding: 10px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .app-header .brand { font-weight: 700; font-size: 15px; display: flex; align-items: center; gap: 8px; }
+  .app-header .unit-stats { font-size: 12px; color: #94a3b8; }
+  
+  .patient-banner {
+    background: #ffffff;
+    border-bottom: 2px solid var(--border);
+    padding: 10px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  }
+  .patient-info { display: flex; gap: 18px; align-items: center; }
+  .bed-badge {
+    background: var(--primary);
+    color: white;
+    font-weight: 800;
+    font-size: 13px;
+    padding: 5px 10px;
+    border-radius: 4px;
+  }
+  .alert-tag {
+    background: #fee2e2;
+    color: var(--danger);
+    font-weight: 700;
+    font-size: 11px;
+    padding: 3px 8px;
+    border-radius: 4px;
+    border: 1px solid #fca5a5;
+  }
+
+  /* Module Tabs */
+  .nav-tabs {
+    background: #ffffff;
+    padding: 0 20px;
+    display: flex;
+    gap: 4px;
+    border-bottom: 1px solid var(--border);
+  }
+  .nav-tab-btn {
+    padding: 10px 16px;
+    background: none;
+    border: none;
+    border-bottom: 3px solid transparent;
+    cursor: pointer;
+    font-weight: 600;
+    color: var(--text-muted);
+    font-size: 12.5px;
+    transition: all 0.15s;
+  }
+  .nav-tab-btn:hover { color: var(--primary); }
+  .nav-tab-btn.active {
+    color: var(--primary);
+    border-bottom-color: var(--primary);
+    background: var(--primary-light);
+  }
+
+  .main-container {
+    padding: 20px;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+  .screen-pane { display: none; }
+  .screen-pane.active { display: block; }
+
+  /* Common Card & Form Styles */
+  .card {
+    background: white;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    margin-bottom: 20px;
+    overflow: hidden;
+  }
+  .card-header {
+    background: #f8fafc;
+    border-bottom: 1px solid var(--border);
+    padding: 12px 16px;
+    font-weight: 700;
+    color: var(--dark);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .card-body { padding: 16px; }
+
+  .btn {
+    padding: 7px 14px;
+    border-radius: 4px;
+    border: 1px solid transparent;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .btn-primary { background: var(--primary); color: white; }
+  .btn-primary:hover { background: var(--primary-hover); }
+  .btn-secondary { background: #e2e8f0; color: var(--text); border-color: #cbd5e1; }
+  .btn-secondary:hover { background: #cbd5e1; }
+  .btn-danger { background: var(--danger); color: white; }
+  .btn-outline-primary { background: white; color: var(--primary); border-color: var(--primary); }
+
+  /* Bed Board Grid */
+  .bed-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 16px;
+  }
+  .bed-card {
+    background: white;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    border-top: 4px solid var(--primary);
+    padding: 14px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+  .bed-card.available { border-top-color: var(--success); }
+  .bed-card.reserved { border-top-color: var(--warning); }
+  .bed-card.cleaning { border-top-color: var(--danger); }
+  
+  .bed-status-badge {
+    padding: 2px 7px;
+    border-radius: 4px;
+    font-size: 10.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+  }
+  .status-occ { background: #dbeafe; color: #1e40af; }
+  .status-avail { background: #dcfce7; color: #166534; }
+  .status-res { background: #fef3c7; color: #92400e; }
+  .status-clean { background: #fee2e2; color: #991b1b; }
+
+  /* Flowsheet Matrix */
+  .flowsheet-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+  }
+  .flowsheet-table th, .flowsheet-table td {
+    border: 1px solid var(--border);
+    padding: 7px 10px;
+    text-align: center;
+  }
+  .flowsheet-table th { background: #f8fafc; font-weight: 700; }
+  .flowsheet-table th.param-col, .flowsheet-table td.param-col {
+    text-align: left;
+    width: 220px;
+    font-weight: 600;
+    background: #fafbfc;
+  }
+  .flowsheet-table tr.category-header td {
+    background: var(--primary-light);
+    color: var(--primary);
+    font-weight: 700;
+    text-align: left;
+    padding: 5px 10px;
+  }
+  .flowsheet-input {
+    width: 55px;
+    text-align: center;
+    padding: 4px;
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    font-size: 11.5px;
+  }
+  .flowsheet-input.alert-prompt {
+    border-color: var(--warning);
+    background: #fffbeb;
+  }
+
+  /* Split Layout for Nutrition / Fluid */
+  .split-layout {
+    display: grid;
+    grid-template-columns: 380px 1fr;
+    gap: 20px;
+  }
+  .form-group { margin-bottom: 12px; }
+  .form-group label { display: block; font-weight: 600; margin-bottom: 4px; font-size: 12px; }
+  .form-control {
+    width: 100%;
+    padding: 6px 10px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    font-size: 12.5px;
+  }
+  .form-tabs { display: flex; gap: 4px; margin-bottom: 12px; }
+  .form-tab-btn {
+    flex: 1;
+    padding: 6px;
+    background: #e2e8f0;
+    border: none;
+    border-radius: 4px;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 11px;
+  }
+  .form-tab-btn.active { background: var(--primary); color: white; }
+
+  /* Ledger Table */
+  .ledger-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+  }
+  .ledger-table th, .ledger-table td {
+    border-bottom: 1px solid var(--border);
+    padding: 8px 10px;
+    text-align: left;
+  }
+  .ledger-table th { background: #f8fafc; font-weight: 700; }
+  .ledger-table .subtotal-row td {
+    background: #f1f5f9;
+    font-weight: 700;
+    border-top: 2px solid var(--border);
+  }
+  .tag-est {
+    color: #b45309;
+    font-weight: 700;
+    background: #fef3c7;
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-size: 10px;
+  }
+</style>
+</head>
+<body>
+
+<!-- Application Header -->
+<div class="app-header">
+  <div class="brand">🏥 Hospital Management System — Intensive Care Unit</div>
+  <div class="unit-stats">Unit: <strong>Medical ICU (MICU)</strong> | Occupancy: <strong>10/12 Beds</strong> | Active Shift: <strong>Day (07:00 - 19:00)</strong></div>
+</div>
+
+<!-- Persistent Patient Banner (Screens 2 through 5) -->
+<div class="patient-banner" id="globalPatientBanner">
+  <div class="patient-info">
+    <div class="bed-badge">BED 04B</div>
+    <div>
+      <div style="font-weight: 800; font-size: 14px; color: var(--dark);">Illustrative Patient D</div>
+      <div style="font-size: 11.5px; color: var(--text-muted);">MRN: 904-8821 | Male, 58y | Adm: 2026-10-20 (Day 3) | Weight: 74.5 kg</div>
+    </div>
+    <div style="font-size: 11.5px;">
+      Primary Dx: <strong>Septic Shock / ARDS</strong> | Attending: <strong>Dr. A. Rao</strong>
+    </div>
+  </div>
+  <div style="display: flex; gap: 8px; align-items: center;">
+    <span class="alert-tag">ALLERGY: PENICILLIN</span>
+    <span style="background: #e2e8f0; padding: 3px 8px; border-radius: 4px; font-weight: 700; font-size: 11px;">FULL CODE</span>
+  </div>
+</div>
+
+<!-- Navigation Tabs -->
+<div class="nav-tabs">
+  <button class="nav-tab-btn active" onclick="switchScreen('screen-bed-board', this)">🛏️ Bed Board (UI-01)</button>
+  <button class="nav-tab-btn" onclick="switchScreen('screen-flowsheet', this)">⏱️ Hourly Flowsheet (UI-02)</button>
+  <button class="nav-tab-btn" onclick="switchScreen('screen-fluids', this)">💧 Fluids & Nutrition (UI-03)</button>
+  <button class="nav-tab-btn" onclick="switchScreen('screen-handover', this)">📋 Shift Handover (UI-04)</button>
+  <button class="nav-tab-btn" onclick="switchScreen('screen-transfer', this)">🚪 Step-Down Transfer (UI-05)</button>
+</div>
+
+<div class="main-container">
+
+  <!-- SCREEN UI-01: BED BOARD -->
+  <div id="screen-bed-board" class="screen-pane active">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+      <div style="font-size: 16px; font-weight: 700;">ICU Bed Status Board</div>
+      <div style="display: flex; gap: 8px;">
+        <select class="form-control" style="width: 150px;">
+          <option>All Beds (12)</option>
+          <option>Occupied (10)</option>
+          <option>Available (1)</option>
+          <option>Cleaning Req (1)</option>
+        </select>
+        <button class="btn btn-primary">+ Reserve Bed for Transfer</button>
+      </div>
+    </div>
+
+    <div class="bed-grid">
+      <!-- Bed 01 -->
+      <div class="bed-card">
+        <div>
+          <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+            <span style="font-weight: 800; font-size: 14px;">BED 01</span>
+            <span class="bed-status-badge status-occ">Occupied</span>
+          </div>
+          <div style="font-weight: 700;">Illustrative Patient A</div>
+          <div style="color: var(--text-muted); font-size: 11px; margin-bottom: 8px;">MRN: 884-2109 | Male, 64y</div>
+          <div style="font-size: 11.5px;">Dx: Post-CABG Monitoring</div>
+          <div style="font-size: 11.5px; margin-top: 4px;">Vent: <strong>Room Air</strong> | Net: <strong>+450 ml</strong></div>
+        </div>
+        <div style="margin-top: 14px;">
+          <button class="btn btn-secondary" style="width: 100%;" onclick="switchScreen('screen-flowsheet')">Open Patient Chart</button>
+        </div>
+      </div>
+
+      <!-- Bed 02 -->
+      <div class="bed-card">
+        <div>
+          <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+            <span style="font-weight: 800; font-size: 14px;">BED 02</span>
+            <span class="bed-status-badge status-occ">Occupied</span>
+          </div>
+          <div style="font-weight: 700;">Illustrative Patient B</div>
+          <div style="color: var(--text-muted); font-size: 11px; margin-bottom: 8px;">MRN: 912-4091 | Female, 42y</div>
+          <div style="font-size: 11.5px;">Dx: Diabetic Ketoacidosis</div>
+          <div style="font-size: 11.5px; margin-top: 4px;">Vent: <strong>PSV Mode</strong> | Net: <strong>-120 ml</strong></div>
+        </div>
+        <div style="margin-top: 14px;">
+          <button class="btn btn-secondary" style="width: 100%;" onclick="switchScreen('screen-flowsheet')">Open Patient Chart</button>
+        </div>
+      </div>
+
+      <!-- Bed 03 -->
+      <div class="bed-card reserved">
+        <div>
+          <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+            <span style="font-weight: 800; font-size: 14px;">BED 03</span>
+            <span class="bed-status-badge status-res">Reserved</span>
+          </div>
+          <div style="font-weight: 700;">Incoming ED Referral</div>
+          <div style="color: var(--text-muted); font-size: 11px; margin-bottom: 8px;">Patient In-Transit (ETA 10m)</div>
+          <div style="font-size: 11.5px;">Equipped: <strong>Ventilator Ready</strong></div>
+          <div style="font-size: 11.5px; margin-top: 4px;">Assigned Nurse: <strong>E. Bekele, RN</strong></div>
+        </div>
+        <div style="margin-top: 14px;">
+          <button class="btn btn-primary" style="width: 100%;">Confirm Bedside Arrival</button>
+        </div>
+      </div>
+
+      <!-- Bed 04 -->
+      <div class="bed-card cleaning">
+        <div>
+          <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+            <span style="font-weight: 800; font-size: 14px;">BED 04</span>
+            <span class="bed-status-badge status-clean">Dirty</span>
+          </div>
+          <div style="font-weight: 700;">Terminal Cleaning</div>
+          <div style="color: var(--text-muted); font-size: 11px; margin-bottom: 8px;">Vacated Today at 09:15</div>
+          <div style="font-size: 11.5px;">Sanitation: <strong>In Progress</strong></div>
+          <div style="font-size: 11.5px; margin-top: 4px;">Staff: <strong>Environmental Services</strong></div>
+        </div>
+        <div style="margin-top: 14px;">
+          <button class="btn btn-outline-primary" style="width: 100%;">Mark Clean & Available</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCREEN UI-02: FLOWSHEET -->
+  <div id="screen-flowsheet" class="screen-pane">
+    <div class="card">
+      <div class="card-header">
+        <div>Bedside Observation Matrix (Shift: 07:00 - 19:00)</div>
+        <div style="display: flex; gap: 8px;">
+          <button class="btn btn-secondary">◀ Earlier</button>
+          <button class="btn btn-secondary">Later ▶</button>
+          <button class="btn btn-primary" onclick="alert('Observations for 13:00 saved successfully.')">Save Column</button>
+        </div>
+      </div>
+      <div class="card-body" style="padding: 0; overflow-x: auto;">
+        <table class="flowsheet-table">
+          <thead>
+            <tr>
+              <th class="param-col">Clinical Parameter</th>
+              <th>07:00</th>
+              <th>08:00</th>
+              <th>09:00</th>
+              <th>10:00</th>
+              <th>11:00</th>
+              <th>12:00</th>
+              <th style="background: #e0f2fe; border-left: 2px solid var(--primary); border-right: 2px solid var(--primary);">13:00 (Active)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="category-header"><td colspan="8">HEMODYNAMICS</td></tr>
+            <tr>
+              <td class="param-col">Heart Rate (bpm)</td>
+              <td>92</td><td>95</td><td>88</td><td>90</td><td>94</td><td>89</td>
+              <td style="background: #f0f9ff;"><input type="text" class="flowsheet-input" value="91"></td>
+            </tr>
+            <tr>
+              <td class="param-col">Blood Pressure (Sys / Dia)</td>
+              <td>108/62</td><td>105/60</td><td>112/65</td><td>110/64</td><td>114/68</td><td>108/62</td>
+              <td style="background: #f0f9ff;">
+                <input type="text" class="flowsheet-input" id="bpSys" value="110" style="width:38px;"> / 
+                <input type="text" class="flowsheet-input" id="bpDia" value="65" style="width:38px;" onblur="calcMap()">
+              </td>
+            </tr>
+            <tr>
+              <td class="param-col">MAP (mmHg) [Auto-Calculated]</td>
+              <td><strong>77</strong></td><td><strong>75</strong></td><td><strong>81</strong></td><td><strong>79</strong></td><td><strong>83</strong></td><td><strong>77</strong></td>
+              <td style="background: #f0f9ff;"><strong id="mapDisplay" style="color: var(--primary);">80</strong></td>
+            </tr>
+
+            <tr class="category-header"><td colspan="8">RESPIRATORY / VENTILATOR</td></tr>
+            <tr>
+              <td class="param-col">Ventilator Mode</td>
+              <td>PRVC</td><td>PRVC</td><td>PRVC</td><td>PSV</td><td>PSV</td><td>PSV</td>
+              <td style="background: #f0f9ff;">
+                <select style="font-size: 11px; padding: 2px;">
+                  <option>PSV</option><option>PRVC</option><option>CPAP</option>
+                </select>
+              </td>
+            </tr>
+            <tr>
+              <td class="param-col">FiO2 (%)</td>
+              <td>45</td><td>45</td><td>40</td><td>40</td><td>35</td><td>35</td>
+              <td style="background: #f0f9ff;"><input type="text" class="flowsheet-input" value="35"></td>
+            </tr>
+            <tr>
+              <td class="param-col">PEEP (cmH2O)</td>
+              <td>8</td><td>8</td><td>8</td><td>5</td><td>5</td><td>5</td>
+              <td style="background: #f0f9ff;"><input type="text" class="flowsheet-input" value="5"></td>
+            </tr>
+            <tr>
+              <td class="param-col">SpO2 (%)</td>
+              <td>97</td><td>96</td><td>98</td><td>97</td><td>98</td><td>98</td>
+              <td style="background: #f0f9ff;"><input type="text" class="flowsheet-input" value="97"></td>
+            </tr>
+            <tr>
+              <td class="param-col">Documenting Nurse</td>
+              <td>S.J.</td><td>S.J.</td><td>S.J.</td><td>S.J.</td><td>S.J.</td><td>S.J.</td>
+              <td style="background: #f0f9ff;"><strong>S. Jenkins</strong></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCREEN UI-03: NUTRITION & FLUID MONITORING -->
+  <div id="screen-fluids" class="screen-pane">
+    <div class="split-layout">
+      <!-- Left: Fast Entry Drawer -->
+      <div class="card">
+        <div class="card-header">Record Nutrition & Fluid</div>
+        <div class="card-body">
+          <div class="form-tabs">
+            <button class="form-tab-btn active" id="btnTabNg" onclick="switchFormTab('ng')">NG Nutrition</button>
+            <button class="form-tab-btn" id="btnTabOral" onclick="switchFormTab('oral')">Oral Feeding</button>
+            <button class="form-tab-btn" id="btnTabLoss" onclick="switchFormTab('loss')">Fluid Loss</button>
+          </div>
+
+          <!-- Form: NG Nutrition -->
+          <div id="formNgSection">
+            <div class="form-group">
+              <label>DateTime</label>
+              <input type="datetime-local" class="form-control" value="2026-10-23T13:00">
+            </div>
+            <div class="form-group">
+              <label>Formula Type</label>
+              <select class="form-control">
+                <option>Peptamen 1.5 AF</option>
+                <option>Jevity 1.0 Cal</option>
+                <option>Glucerna 1.5</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Amount (ml)</label>
+              <input type="number" class="form-control" placeholder="e.g. 100" id="ngAmountInput">
+            </div>
+            <div class="form-group">
+              <label>Frequency</label>
+              <select class="form-control">
+                <option>Continuous (ml/hr)</option>
+                <option>Bolus q4h</option>
+                <option>Bolus q6h</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Comments</label>
+              <textarea class="form-control" rows="2" placeholder="Residual volume, feed tolerance..."></textarea>
+            </div>
+            <button class="btn btn-primary" style="width: 100%;" onclick="addSampleNgEntry()">Save NG Nutrition</button>
+          </div>
+
+          <!-- Form: Fluid Loss -->
+          <div id="formLossSection" style="display: none;">
+            <div class="form-group">
+              <label>DateTime</label>
+              <input type="datetime-local" class="form-control" value="2026-10-23T13:00">
+            </div>
+            <div class="form-group">
+              <label>Fluid Loss Source</label>
+              <select class="form-control">
+                <option>Urine / Foley Catheter</option>
+                <option>NG Aspirate</option>
+                <option>Surgical Drain #1</option>
+                <option>Chest Tube</option>
+                <option>Emesis</option>
+                <option>Stool / Diarrhea</option>
+                <option>Other (Specify)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Amount (ml)</label>
+              <input type="number" class="form-control" placeholder="e.g. 85" id="lossAmountInput">
+            </div>
+            <div class="form-group">
+              <label>
+                <input type="checkbox" id="unmeasuredCheck" onchange="toggleUnmeasured()"> 
+                Mark as Unmeasured (e.g. linen soiled)
+              </label>
+            </div>
+            <div class="form-group">
+              <label>Comments</label>
+              <textarea class="form-control" rows="2" placeholder="Appearance, color, odor..."></textarea>
+            </div>
+            <button class="btn btn-primary" style="width: 100%;" onclick="addSampleLossEntry()">Save Fluid Loss</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: Fluid Balance Ledger -->
+      <div class="card">
+        <div class="card-header">
+          <div>Fluid Balance Ledger (Reset Period: 24h)</div>
+          <button class="btn btn-secondary btn-sm" onclick="alert('Audit modal opened for selected row.')">Correct Selected Entry</button>
+        </div>
+        <div class="card-body" style="padding: 0;">
+          <table class="ledger-table" id="ledgerTable">
+            <thead>
+              <tr>
+                <th>Time</th>
+                <th>Intake (NG / Oral)</th>
+                <th>Loss (Source)</th>
+                <th>Hourly Net</th>
+                <th>Total Balance</th>
+                <th>Nurse</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>07:00</td>
+                <td>NG: 100 ml (Peptamen)</td>
+                <td>Urine: 120 ml</td>
+                <td style="color: #b91c1c;">-20 ml</td>
+                <td style="font-weight: 700; color: #b91c1c;">-20 ml</td>
+                <td>S. Jenkins</td>
+              </tr>
+              <tr>
+                <td>08:00</td>
+                <td>NG: 100 ml</td>
+                <td>Urine: 80 ml</td>
+                <td style="color: #15803d;">+20 ml</td>
+                <td style="font-weight: 700;">0 ml</td>
+                <td>S. Jenkins</td>
+              </tr>
+              <tr>
+                <td>09:00</td>
+                <td>Oral: 50 ml (Water sips)</td>
+                <td>Urine: 90 ml</td>
+                <td style="color: #b91c1c;">-40 ml</td>
+                <td style="font-weight: 700; color: #b91c1c;">-40 ml</td>
+                <td>S. Jenkins</td>
+              </tr>
+              <tr>
+                <td>10:00</td>
+                <td>NG: 100 ml</td>
+                <td>Drain: 40 ml | Urine: 70 ml</td>
+                <td style="color: #b91c1c;">-10 ml</td>
+                <td style="font-weight: 700; color: #b91c1c;">-50 ml</td>
+                <td>S. Jenkins</td>
+              </tr>
+              <tr>
+                <td>11:00</td>
+                <td>NG: 100 ml</td>
+                <td>Urine: 60 ml</td>
+                <td style="color: #15803d;">+40 ml</td>
+                <td style="font-weight: 700; color: #b91c1c;">-10 ml</td>
+                <td>S. Jenkins</td>
+              </tr>
+              <tr>
+                <td>12:00</td>
+                <td>NG: 100 ml</td>
+                <td>Urine: 110 ml</td>
+                <td style="color: #b91c1c;">-10 ml</td>
+                <td style="font-weight: 700; color: #b91c1c;">-20 ml</td>
+                <td>S. Jenkins</td>
+              </tr>
+              <tr class="subtotal-row">
+                <td colspan="2">Shift Intake: <strong>550 ml</strong></td>
+                <td>Shift Loss: <strong>570 ml</strong></td>
+                <td colspan="3">Cumulative Balance: <strong style="color: #b91c1c;">-20 ml</strong></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCREEN UI-04: SHIFT HANDOVER -->
+  <div id="screen-handover" class="screen-pane">
+    <div class="card">
+      <div class="card-header">Nursing Shift Handover (SBAR Structured Protocol)</div>
+      <div class="card-body">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+          <!-- Objective Live Telemetry -->
+          <div style="background: #f8fafc; padding: 14px; border-radius: 6px; border: 1px solid var(--border);">
+            <div style="font-weight: 700; color: var(--primary); margin-bottom: 10px;">Aggregated Chart Data (Read-Only)</div>
+            <div style="margin-bottom: 8px;"><strong>Hemodynamics:</strong> HR 88-95 bpm | BP 105/60 to 114/68 | MAP 75-83 mmHg</div>
+            <div style="margin-bottom: 8px;"><strong>Ventilation:</strong> PSV Mode | FiO2 35% | PEEP 5 cmH2O | SpO2 97-98%</div>
+            <div style="margin-bottom: 8px;"><strong>Cumulative 24h Fluid Net:</strong> <span style="color: #b91c1c; font-weight: 700;">-20 ml (Measured)</span></div>
+            <div>
+              <strong>Active Lines & Catheters:</strong>
+              <ul style="margin: 4px 0 0 16px; padding: 0;">
+                <li>Left Radial Arterial Line (Day 3, site clean)</li>
+                <li>Right IJ Central Venous Catheter (Day 3)</li>
+                <li>Foley Catheter (Patent, clear drainage)</li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- SBAR Narrative -->
+          <div>
+            <div class="form-group">
+              <label>S - Situation</label>
+              <textarea class="form-control" rows="2">58yo M Day 3 post-septic shock. Weaned from pressors, extubated to PSV.</textarea>
+            </div>
+            <div class="form-group">
+              <label>B - Background</label>
+              <textarea class="form-control" rows="2">Community-acquired pneumonia. Completed Day 3 IV Ceftriaxone. History of T2D.</textarea>
+            </div>
+            <div class="form-group">
+              <label>A - Assessment</label>
+              <textarea class="form-control" rows="2">Hemodynamics stable. Enteral feeding running well at 100 ml/hr with low residuals.</textarea>
+            </div>
+            <div class="form-group">
+              <label>R - Recommendation</label>
+              <textarea class="form-control" rows="2">Wean PSV tomorrow morning. Continue enteral feed. Check AM electrolytes at 05:00.</textarea>
+            </div>
+          </div>
+        </div>
+
+        <div style="border-top: 1px solid var(--border); margin-top: 20px; padding-top: 16px; display: flex; justify-content: space-between; align-items: center;">
+          <div style="display: flex; gap: 20px;">
+            <div>
+              Outgoing Nurse: <strong>S. Jenkins, RN</strong> 
+              <span style="color: var(--success); font-weight: 700;">(Authenticated 18:45)</span>
+            </div>
+            <div>
+              Incoming Nurse: <strong>E. Bekele, RN</strong> 
+              <input type="password" placeholder="Enter PIN to counter-sign" style="padding: 4px; border: 1px solid var(--border); border-radius: 3px; font-size: 11px;">
+            </div>
+          </div>
+          <button class="btn btn-primary" onclick="alert('Dual sign-off complete. Handover locked.')">Complete & Lock Handover</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCREEN UI-05: STEP-DOWN TRANSFER -->
+  <div id="screen-transfer" class="screen-pane">
+    <div class="card">
+      <div class="card-header">Patient Step-Down Transfer & Bed Decontamination</div>
+      <div class="card-body">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+          <!-- Physician Disposition -->
+          <div>
+            <div style="font-weight: 700; color: var(--dark); margin-bottom: 10px;">1. Clinical Disposition Order (Physician)</div>
+            <div class="form-group">
+              <label>Disposition Type</label>
+              <select class="form-control">
+                <option>Step-Down to General Inpatient Ward</option>
+                <option>Transfer to High-Dependency Unit (HDU)</option>
+                <option>Direct Discharge Home</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Destination Ward</label>
+              <select class="form-control">
+                <option>Ward 3A - Medical / Telemetry</option>
+                <option>Ward 2B - Surgical Post-Op</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Destination Bed</label>
+              <select class="form-control">
+                <option>Bed 312-A (Confirmed Available)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Medical Transfer Summary</label>
+              <textarea class="form-control" rows="3">Patient extubated and stable off vasopressor support for >24 hours. Tolerating oral diet. Transfer to Ward 3A for step-down telemetry.</textarea>
+            </div>
+          </div>
+
+          <!-- Nursing Checklist -->
+          <div>
+            <div style="font-weight: 700; color: var(--dark); margin-bottom: 10px;">2. Nursing Transfer Checklist</div>
+            <div class="form-group">
+              <label><input type="checkbox" checked> Arterial Line removed & pressure dressing applied</label>
+            </div>
+            <div class="form-group">
+              <label><input type="checkbox" checked> Central Venous Line removed / site dressed</label>
+            </div>
+            <div class="form-group">
+              <label><input type="checkbox" checked> Transport oxygen cylinder prepared (2 L/min NC)</label>
+            </div>
+            <div class="form-group">
+              <label><input type="checkbox" checked> SBAR verbal handover given to receiving ward nurse</label>
+            </div>
+            <div class="form-group">
+              <label><input type="checkbox" checked> Personal property and physical chart transferred</label>
+            </div>
+          </div>
+        </div>
+
+        <div style="border-top: 1px solid var(--border); margin-top: 20px; padding-top: 16px; display: flex; justify-content: space-between; align-items: center;">
+          <div style="color: var(--danger); font-size: 11.5px;">
+            ⚠️ Confirming dispatch will close the ICU stay and mark Bed 04B as <strong>Cleaning Required</strong>.
+          </div>
+          <button class="btn btn-danger" onclick="alert('Patient dispatched to Ward 3A. Bed 04B reset to Cleaning Required.')">Dispatch Patient & Reset Bed</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  function switchScreen(screenId, btnElement) {
+    document.querySelectorAll('.screen-pane').forEach(el => el.classList.remove('active'));
+    document.getElementById(screenId).classList.add('active');
+    
+    if (btnElement) {
+      document.querySelectorAll('.nav-tab-btn').forEach(btn => btn.classList.remove('active'));
+      btnElement.classList.add('active');
+    }
+
+    // Toggle patient banner visibility (Bed board does not need single-patient focus)
+    const banner = document.getElementById('globalPatientBanner');
+    banner.style.display = (screenId === 'screen-bed-board') ? 'none' : 'flex';
+  }
+
+  function calcMap() {
+    const sys = parseFloat(document.getElementById('bpSys').value) || 0;
+    const dia = parseFloat(document.getElementById('bpDia').value) || 0;
+    if (sys && dia) {
+      const mapVal = Math.round((sys + (2 * dia)) / 3);
+      document.getElementById('mapDisplay').innerText = mapVal;
+    }
+  }
+
+  function switchFormTab(type) {
+    document.querySelectorAll('.form-tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('formNgSection').style.display = 'none';
+    document.getElementById('formLossSection').style.display = 'none';
+    
+    if (type === 'ng') {
+      document.getElementById('btnTabNg').classList.add('active');
+      document.getElementById('formNgSection').style.display = 'block';
+    } else if (type === 'loss') {
+      document.getElementById('btnTabLoss').classList.add('active');
+      document.getElementById('formLossSection').style.display = 'block';
+    }
+  }
+
+  function toggleUnmeasured() {
+    const isUnmeasured = document.getElementById('unmeasuredCheck').checked;
+    const amountInput = document.getElementById('lossAmountInput');
+    amountInput.disabled = isUnmeasured;
+    if (isUnmeasured) amountInput.value = '';
+  }
+
+  function addSampleNgEntry() {
+    const amt = document.getElementById('ngAmountInput').value || '100';
+    const table = document.getElementById('ledgerTable').getElementsByTagName('tbody')[0];
+    const newRow = table.insertRow(table.rows.length - 1);
+    newRow.innerHTML = `
+      <td>13:00</td>
+      <td>NG: ${amt} ml (Peptamen)</td>
+      <td>--</td>
+      <td style="color: #15803d;">+${amt} ml</td>
+      <td style="font-weight: 700; color: #15803d;">+${amt - 20} ml</td>
+      <td>S. Jenkins</td>
+    `;
+    alert('NG Feed of ' + amt + ' ml recorded to fluid ledger.');
+  }
+
+  function addSampleLossEntry() {
+    const isUnmeasured = document.getElementById('unmeasuredCheck').checked;
+    const amt = isUnmeasured ? null : (document.getElementById('lossAmountInput').value || '85');
+    const table = document.getElementById('ledgerTable').getElementsByTagName('tbody')[0];
+    const newRow = table.insertRow(table.rows.length - 1);
+    
+    if (isUnmeasured) {
+      newRow.innerHTML = `
+        <td>13:00</td>
+        <td>--</td>
+        <td>Stool: <span class="tag-est">Unmeasured</span></td>
+        <td>--</td>
+        <td style="font-weight: 700;"><span class="tag-est">*Estimated (-20ml)</span></td>
+        <td>S. Jenkins</td>
+      `;
+    } else {
+      newRow.innerHTML = `
+        <td>13:00</td>
+        <td>--</td>
+        <td>Urine: ${amt} ml</td>
+        <td style="color: #b91c1c;">-${amt} ml</td>
+        <td style="font-weight: 700; color: #b91c1c;">-${parseFloat(amt) + 20} ml</td>
+        <td>S. Jenkins</td>
+      `;
+    }
+    alert('Fluid Loss recorded successfully.');
+  }
+
+  // Initialize
+  document.getElementById('globalPatientBanner').style.display = 'none';
+</script>
+</body>
+</html>
